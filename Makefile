@@ -36,7 +36,7 @@ bin_dir: output_dir
 src_dir: output_dir
 	@mkdir -p $(BUILD_DIR)/src
 	@mkdir -p $(BUILD_DIR)/src/$(REPO_PREFIX)
-	@rsync -avzuq $(ROOT_DIR)/src/ $(BUILD_DIR)/src/$(REPO_PREFIX)/
+	@rsync -avzuq $(ROOT_DIR)/ $(BUILD_DIR)/src/$(REPO_PREFIX)/
 
 output_dir:
 	@mkdir -p $(BUILD_DIR)

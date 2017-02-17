@@ -7,7 +7,7 @@ import (
     "strings"
     "reflect"
     "strconv"
-    "github.com/swordqiu/structarg.go.git/gotypes"
+    "github.com/swordqiu/structarg.go/gotypes"
 )
 
 type Argument interface {

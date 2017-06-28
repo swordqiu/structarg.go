@@ -15,15 +15,15 @@ type Options struct {
 }
 ```
 
-#Argument name
+## Argument name
 
 Each member variable of the struct represents an argument. The variable name is the argument name. 
 
-#Positional and optional arguments
+## Positional and optional arguments
 
 If the variable name is all uppercased, the argument is a positional argument, otherwise, it is an optional argument. Additionally, boolean tag "optional" explicitly defines whether the argument is optional or positional.
 
-#Tags
+## Tags
 
 The attributes of an argument are defined in the comment tags of the member variable of the struct. The following tags are supported:
 
@@ -86,10 +86,9 @@ The attributes of an argument are defined in the comment tags of the member vari
     the tag is optional, the default value is "1"
     */
     TAG_NARGS = "nargs"
-)
 ```
 
-#Example usage
+## Example usage
 
 ```go
 

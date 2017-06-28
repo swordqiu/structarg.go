@@ -1,6 +1,6 @@
 # structarg.go
 
-Argument parser for go that define and parse command line arguements into a struct type variable. The attributes of arguments are defined in the comment tags of the struct. after parsing command-line argument or configuration files, the values are stored in this struct.
+Argument parser for go that defines and parses command line arguements into a struct type variable. The attributes of arguments are defined in the comment tags of the struct. after parsing command-line argument or configuration files, the values are stored in this struct.
 
 please refer to examples/example.go for example usages.
 

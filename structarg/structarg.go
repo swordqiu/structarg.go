@@ -2,7 +2,9 @@ package structarg
 
 import (
     "os"
+    "log"
     "bytes"
+    "bufio"
     "fmt"
     "strings"
     "reflect"
@@ -79,14 +81,63 @@ func NewArgumentParser(target interface{}, prog, desc, epilog string) (*Argument
 }
 
 const (
+    /*
+    help text of the argument
+    the argument is optional.
+    */
     TAG_HELP = "help"
+    /*
+    command-line token for the optional argument, e.g. token:"url"
+    the command-line argument will be "--url http://127.0.0.1:3306"
+    the tag is optional.
+    if the tag is missing, the variable name will be used as token.
+    If the variable name is CamelCase, the token will be transformed
+    into kebab-case, e.g. if the variable is "AuthURL", the token will
+    be "--auth-url"
+    */
     TAG_TOKEN = "token"
+    /*
+    short form of command-line token, e.g. short-token:"u"
+    the command-line argument will be "-u http://127.0.0.1:3306"
+    the tag is optional
+    */
     TAG_SHORT_TOKEN = "short-token"
+    /*
+    Metavar of the argument
+    the tag is optional
+    */
     TAG_METAVAR = "metavar"
+    /*
+    The default value of the argument.
+    the tag is optional
+    */
     TAG_DEFAULT = "default"
+    /*
+    The possible values of an arguments. All choices are are concatenatd by "|".
+    e.g. `choices:"1|2|3"`
+    the tag is optional
+    */
     TAG_CHOICES = "choices"
+    /*
+    A boolean value explicitly declare whether the argument is optional,
+    the tag is optional
+    */
     TAG_OPTIONAL = "optional"
+    /*
+    A boolean value explicitly decalre whther the argument is an subcommand
+    A subcommand argument must be the last positional argument.
+    the tag is optional, the default value is false
+    */
     TAG_SUBCOMMAND = "subcommand"
+    /*
+    The attribute defines the possible number of argument. Possible values
+    ar:
+        * positive integers, e.g. "1", "2"
+        * "*" any number of arguments
+        * "+" at lease one argument
+        * "?" at most one argument
+    the tag is optional, the default value is "1"
+    */
     TAG_NARGS = "nargs"
 )
 
@@ -255,12 +306,19 @@ func (this *SingleArgument) MetaVar() string {
     }
 }
 
+func isUpperChar(ch byte) bool {
+    return ch >= 'A' && ch <= 'Z'
+}
+
 func splitCamelString(str string) string {
+    if strings.ToUpper(str) == str {
+        return str
+    }
     var buf bytes.Buffer
     for i := 0; i < len(str); i ++ {
         c := str[i]
-        if c >= 'A' && c <= 'Z' {
-            if buf.Len() > 0 {
+        if isUpperChar(c) {
+            if buf.Len() > 0 && !isUpperChar(str[i-1]) && str[i-1] != '-' {
                 buf.WriteByte('-')
             }
             buf.WriteByte(c - 'A' + 'a')
@@ -602,10 +660,14 @@ func (this *ArgumentParser) ParseArgs(args []string, ignore_unknown bool) error 
             }
         }else {
             if pos_idx >= len(this.posArgs) {
-                last_arg := this.posArgs[len(this.posArgs)-1]
-                if last_arg.IsMulti() {
-                    last_arg.SetValue(args[i])
-                }else if ! ignore_unknown {
+                if len(this.posArgs) > 0 {
+                    last_arg := this.posArgs[len(this.posArgs)-1]
+                    if last_arg.IsMulti() {
+                        last_arg.SetValue(args[i])
+                    } else if ! ignore_unknown {
+                        return fmt.Errorf("Unknown positional argument %s", args[i])
+                    }
+                } else if ! ignore_unknown {
                     return fmt.Errorf("Unknown positional argument %s", args[i])
                 }
             }else {
@@ -631,6 +693,43 @@ func (this *ArgumentParser) ParseArgs(args []string, ignore_unknown bool) error 
         return fmt.Errorf("Not enough arguments")
     }
     return this.Validate()
+}
+
+func (this *ArgumentParser) parseKeyValue(key, value string) error {
+    arg := this.findOptionalArgument(key)
+    if arg != nil {
+        return arg.SetValue(value)
+    } else {
+        log.Printf("Cannot found argument %s", key)
+    }
+    return nil
+}
+
+func (this *ArgumentParser) ParseFile(filepath string) error {
+    file, e := os.Open(filepath)
+    if e != nil {
+        return e
+    }
+    defer file.Close()
+
+    scanner := bufio.NewScanner(file)
+    for scanner.Scan() {
+        line := scanner.Text()
+        pos := strings.IndexByte(line, '=')
+        if pos > 0 && pos < len(line) {
+            key := strings.Replace(strings.Trim(line[:pos], " "), "_", "-", -1)
+            val := strings.Trim(line[pos+1:], " ")
+            this.parseKeyValue(key, val)
+        } else {
+            return fmt.Errorf("Misformated line: %s", line)
+        }
+    }
+
+    if err := scanner.Err(); err != nil {
+        return err
+    }
+
+    return nil
 }
 
 func (this *ArgumentParser) GetSubcommand() *SubcommandArgument {

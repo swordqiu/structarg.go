@@ -1,6 +1,6 @@
 #####################################################
 
-REPO_PREFIX := github.com/swordqiu/structarg.go.git
+REPO_PREFIX := github.com/swordqiu/structarg.go
 
 #####################################################
 
